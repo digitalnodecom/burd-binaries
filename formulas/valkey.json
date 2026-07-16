@@ -1,0 +1,24 @@
+{
+  "name": "valkey",
+  "homebrew_formula": "valkey",
+  "description": "High-performance data structure server (Redis fork)",
+  "homepage": "https://valkey.io/",
+  "architectures": ["arm64", "x86_64"],
+  "macos_versions": ["sonoma", "sequoia"],
+  "binaries": [
+    "valkey-server",
+    "valkey-cli",
+    "valkey-benchmark",
+    "valkey-check-aof",
+    "valkey-check-rdb",
+    "valkey-sentinel"
+  ],
+  "main_binary": "valkey-server",
+  "dependencies": [
+    { "formula": "openssl@3", "libs": ["libssl.3.dylib", "libcrypto.3.dylib"] }
+  ],
+  "test_commands": ["{main_binary} --version"],
+  "configs": ["valkey.conf", "sentinel.conf"],
+  "default_port": 6379,
+  "notes": "Redis-compatible fork; uses OpenSSL 3.x."
+}

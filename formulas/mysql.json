@@ -1,0 +1,59 @@
+{
+  "name": "mysql",
+  "homebrew_formula": "mysql",
+  "description": "Open source relational database management system",
+  "homepage": "https://dev.mysql.com/",
+  "architectures": ["arm64", "x86_64"],
+  "macos_versions": ["sonoma", "sequoia"],
+  "binaries": [
+    "mysqld",
+    "mysql",
+    "mysqladmin",
+    "mysqldump",
+    "mysqlimport",
+    "mysqlcheck",
+    "mysqlshow",
+    "mysqlbinlog",
+    "mysql_upgrade",
+    "mysql_config_editor",
+    "mysql_secure_installation",
+    "mysql_ssl_rsa_setup",
+    "mysqld_safe"
+  ],
+  "main_binary": "mysqld",
+  "dependencies": [
+    {
+      "formula": "openssl@3",
+      "libs": ["libssl.3.dylib", "libcrypto.3.dylib"]
+    },
+    {
+      "formula": "icu4c@78",
+      "libs": []
+    },
+    {
+      "formula": "lz4",
+      "libs": ["liblz4.1.10.0.dylib", "liblz4.dylib", "liblz4.1.dylib"]
+    },
+    {
+      "formula": "zstd",
+      "libs": ["libzstd.1.5.7.dylib", "libzstd.1.dylib", "libzstd.dylib"]
+    },
+    {
+      "formula": "protobuf",
+      "libs": []
+    },
+    {
+      "formula": "abseil",
+      "libs": []
+    },
+    {
+      "formula": "zlib",
+      "libs": []
+    }
+  ],
+  "test_commands": [
+    "{main_binary} --version"
+  ],
+  "default_port": 3306,
+  "notes": "MySQL requires initialization with mysqld --initialize before first use."
+}

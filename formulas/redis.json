@@ -1,0 +1,32 @@
+{
+  "name": "redis",
+  "homebrew_formula": "redis",
+  "description": "Persistent key-value database with built-in net interface",
+  "homepage": "https://redis.io/",
+  "architectures": ["arm64", "x86_64"],
+  "macos_versions": ["sonoma", "sequoia"],
+  "binaries": [
+    "redis-server",
+    "redis-cli",
+    "redis-benchmark",
+    "redis-check-aof",
+    "redis-check-rdb",
+    "redis-sentinel"
+  ],
+  "main_binary": "redis-server",
+  "dependencies": [
+    {
+      "formula": "openssl@3",
+      "libs": ["libssl.3.dylib", "libcrypto.3.dylib"]
+    }
+  ],
+  "test_commands": [
+    "{main_binary} --version"
+  ],
+  "configs": [
+    "redis.conf",
+    "redis-sentinel.conf"
+  ],
+  "default_port": 6379,
+  "notes": "Redis 8.x uses OpenSSL 3.x. Older versions may use OpenSSL 1.1."
+}

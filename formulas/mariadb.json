@@ -1,0 +1,54 @@
+{
+  "name": "mariadb",
+  "homebrew_formula": "mariadb",
+  "description": "Drop-in replacement for MySQL",
+  "homepage": "https://mariadb.org/",
+  "architectures": ["arm64", "x86_64"],
+  "macos_versions": ["sonoma", "sequoia"],
+  "binaries": [
+    "mariadbd",
+    "mariadbd-safe",
+    "mariadb",
+    "mariadb-admin",
+    "mariadb-dump",
+    "mariadb-install-db",
+    "mariadb-check",
+    "mariadb-import",
+    "mariadb-show",
+    "mariadb-upgrade",
+    "mariadb-backup",
+    "mariadb-binlog"
+  ],
+  "main_binary": "mariadbd",
+  "dependencies": [
+    {
+      "formula": "openssl@3",
+      "libs": ["libssl.3.dylib", "libcrypto.3.dylib"]
+    },
+    {
+      "formula": "pcre2",
+      "libs": ["libpcre2-8.dylib"]
+    },
+    {
+      "formula": "lz4",
+      "libs": ["liblz4.dylib"]
+    },
+    {
+      "formula": "zstd",
+      "libs": ["libzstd.dylib"]
+    },
+    {
+      "formula": "xz",
+      "libs": ["liblzma.dylib"]
+    },
+    {
+      "formula": "lzo",
+      "libs": ["liblzo2.dylib"]
+    }
+  ],
+  "test_commands": [
+    "{main_binary} --version"
+  ],
+  "default_port": 3306,
+  "notes": "MariaDB requires initialization with mariadb-install-db before first use. groonga dependency is optional for full-text search."
+}

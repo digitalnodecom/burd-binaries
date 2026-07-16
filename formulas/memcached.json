@@ -1,0 +1,18 @@
+{
+  "name": "memcached",
+  "homebrew_formula": "memcached",
+  "description": "High performance, distributed memory object caching system",
+  "homepage": "https://memcached.org/",
+  "architectures": ["arm64", "x86_64"],
+  "macos_versions": ["sonoma", "sequoia"],
+  "binaries": ["memcached"],
+  "main_binary": "memcached",
+  "dependencies": [
+    { "formula": "libevent", "libs": ["libevent-2.1.7.dylib", "libevent_core-2.1.7.dylib", "libevent_extra-2.1.7.dylib", "libevent_pthreads-2.1.7.dylib"] },
+    { "formula": "openssl@3", "libs": ["libssl.3.dylib", "libcrypto.3.dylib"] }
+  ],
+  "test_commands": ["{main_binary} --version"],
+  "configs": [],
+  "default_port": 11211,
+  "notes": "Depends on libevent and OpenSSL 3.x."
+}

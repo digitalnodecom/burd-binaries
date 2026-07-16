@@ -1,0 +1,15 @@
+{
+  "name": "beanstalkd",
+  "homebrew_formula": "beanstalkd",
+  "description": "Simple, fast work queue",
+  "homepage": "https://beanstalkd.github.io/",
+  "architectures": ["arm64", "x86_64"],
+  "macos_versions": ["sonoma", "sequoia"],
+  "binaries": ["beanstalkd"],
+  "main_binary": "beanstalkd",
+  "dependencies": [],
+  "test_commands": ["{main_binary} -v"],
+  "configs": [],
+  "default_port": 11300,
+  "notes": "Self-contained; no external dylib dependencies."
+}

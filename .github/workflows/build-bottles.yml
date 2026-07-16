@@ -1,0 +1,92 @@
+name: Build bottle binaries
+
+# Extracts Homebrew bottles into portable, self-contained packages (relinked to
+# @executable_path) and publishes them to per-formula GitHub Releases with
+# checksums. Consumed by Burd's services.json.
+
+on:
+  workflow_dispatch:
+    inputs:
+      formula:
+        description: "Formula to build ('all' or one of the formulas/*.json names)"
+        type: string
+        default: "all"
+  schedule:
+    # Weekly: pick up new upstream bottle versions automatically.
+    - cron: "0 6 * * 1"
+  push:
+    branches: [main]
+    paths:
+      - "formulas/**"
+      - "lib/**"
+      - "extract.sh"
+      - ".github/workflows/build-bottles.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      formulas: ${{ steps.list.outputs.formulas }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve formula list
+        id: list
+        run: |
+          if [ "${{ inputs.formula }}" != "" ] && [ "${{ inputs.formula }}" != "all" ]; then
+            echo "formulas=[\"${{ inputs.formula }}\"]" >> "$GITHUB_OUTPUT"
+          else
+            names=$(ls formulas/*.json | xargs -n1 basename | sed 's/\.json$//' | jq -R . | jq -sc .)
+            echo "formulas=$names" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        formula: ${{ fromJson(needs.matrix.outputs.formulas) }}
+        include:
+          - arch: arm64
+            runner: macos-latest
+          - arch: x86_64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract bottle
+        run: ./extract.sh "${{ matrix.formula }}" latest "${{ matrix.arch }}"
+
+      - name: Package + checksum
+        id: pkg
+        run: |
+          set -euo pipefail
+          out=$(ls -d output/${{ matrix.formula }}/*-${{ matrix.arch }} | head -1)
+          version=$(basename "$out" | sed "s/-${{ matrix.arch }}\$//")
+          asset="${{ matrix.formula }}-${version}-${{ matrix.arch }}.tar.gz"
+          tar -C "$out" -czf "$asset" .
+          shasum -a 256 "$asset" | cut -d' ' -f1 > "$asset.sha256"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "tag=${{ matrix.formula }}-$version" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.pkg.outputs.tag }}"
+          # Create the release once (idempotent); both arch jobs target the same tag.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "${{ matrix.formula }} ${{ steps.pkg.outputs.version }}" \
+              --notes "Portable ${{ matrix.formula }} ${{ steps.pkg.outputs.version }} extracted from the Homebrew bottle, relinked to @executable_path." \
+              || true
+          fi
+          gh release upload "$TAG" \
+            "${{ steps.pkg.outputs.asset }}" \
+            "${{ steps.pkg.outputs.asset }}.sha256" \
+            --clobber
