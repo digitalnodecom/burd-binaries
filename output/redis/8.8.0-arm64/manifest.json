@@ -1,0 +1,15 @@
+{
+  "name": "redis",
+  "version": "8.8.0",
+  "source": "homebrew",
+  "source_formula": "redis",
+  "extracted_at": "2026-07-16T15:46:22Z",
+  "architecture": "arm64",
+  "binaries": {"redis-benchmark":{"path":"bin/redis-benchmark","sha256":"40274f4edfc752af93dbc371ec4627bc10f1e74df1694d939b83f4f500b19d43"},"redis-check-aof":{"path":"bin/redis-check-aof","sha256":"12d94f8e95874f0aaedca63c12ad201730f030dafb96e5f6792baa2db32b76ca"},"redis-check-rdb":{"path":"bin/redis-check-rdb","sha256":"12d94f8e95874f0aaedca63c12ad201730f030dafb96e5f6792baa2db32b76ca"},"redis-cli":{"path":"bin/redis-cli","sha256":"f3b855b1511de3479a7b2b0a8165793f35b3ae89210744dae76ce7d62abaa51d"},"redis-sentinel":{"path":"bin/redis-sentinel","sha256":"12d94f8e95874f0aaedca63c12ad201730f030dafb96e5f6792baa2db32b76ca"},"redis-server":{"path":"bin/redis-server","sha256":"12d94f8e95874f0aaedca63c12ad201730f030dafb96e5f6792baa2db32b76ca"}},
+  "bundled_libs": ["lib/libcrypto.3.dylib","lib/libssl.3.dylib"],
+  "configs": ["etc/redis-sentinel.conf","etc/redis.conf"],
+  "verification": {
+    "passed": true,
+    "tested_at": "2026-07-16T15:46:22Z"
+  }
+}

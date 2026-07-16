@@ -25,11 +25,26 @@ log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# Map the running macOS version to its Homebrew bottle codename. Bottles are
+# published per-OS, and only recent codenames are available for current formula
+# versions — so we must target the host's actual OS, not a hardcoded one.
+detect_macos_codename() {
+    local major
+    major=$(sw_vers -productVersion 2>/dev/null | cut -d. -f1)
+    case "$major" in
+        13) echo ventura ;;
+        14) echo sonoma ;;
+        15) echo sequoia ;;
+        26) echo tahoe ;;
+        *)  echo sequoia ;;  # sane default for unknown/newer
+    esac
+}
+
 # Parse arguments
 FORMULA="${1:?Usage: $0 <formula> [version] [arch] [os]}"
 VERSION="${2:-latest}"
 ARCH="${3:-arm64}"
-OS="${4:-sonoma}"
+OS="${4:-$(detect_macos_codename)}"
 
 # Validate architecture
 if [[ "$ARCH" != "arm64" && "$ARCH" != "x86_64" ]]; then
