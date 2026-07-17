@@ -1,0 +1,87 @@
+name: Build mirror binaries
+
+# Re-hosts prebuilt upstream binaries (frpc, mailpit, ...) into the portable
+# burd package layout and publishes them to per-service GitHub Releases with
+# checksums — so Burd downloads them from one integrity-checked place instead
+# of scattered upstream URLs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Mirror to build ('all' or one of the mirrors/*.json names)"
+        type: string
+        default: "all"
+  schedule:
+    - cron: "0 6 * * 2"
+  push:
+    branches: [main]
+    paths:
+      - "mirrors/**"
+      - "mirror.sh"
+      - ".github/workflows/build-mirrors.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      names: ${{ steps.list.outputs.names }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: |
+          if [ "${{ inputs.name }}" != "" ] && [ "${{ inputs.name }}" != "all" ]; then
+            echo "names=[\"${{ inputs.name }}\"]" >> "$GITHUB_OUTPUT"
+          else
+            names=$(ls mirrors/*.json | xargs -n1 basename | sed 's/\.json$//' | jq -R . | jq -sc .)
+            echo "names=$names" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJson(needs.matrix.outputs.names) }}
+        arch: [arm64, x86_64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mirror binary
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mirror.sh "${{ matrix.name }}" "${{ matrix.arch }}"
+
+      - name: Package + checksum
+        id: pkg
+        run: |
+          set -euo pipefail
+          out=$(ls -d output/${{ matrix.name }}/*-${{ matrix.arch }} | head -1)
+          version=$(basename "$out" | sed "s/-${{ matrix.arch }}\$//")
+          asset="${{ matrix.name }}-${version}-${{ matrix.arch }}.tar.gz"
+          tar -C "$out" -czf "$asset" .
+          sha256sum "$asset" | cut -d' ' -f1 > "$asset.sha256"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "tag=${{ matrix.name }}-$version" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.pkg.outputs.tag }}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "${{ matrix.name }} ${{ steps.pkg.outputs.version }}" \
+              --notes "Portable ${{ matrix.name }} ${{ steps.pkg.outputs.version }}, mirrored from upstream." \
+              || true
+          fi
+          gh release upload "$TAG" \
+            "${{ steps.pkg.outputs.asset }}" \
+            "${{ steps.pkg.outputs.asset }}.sha256" \
+            --clobber

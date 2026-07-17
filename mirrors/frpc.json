@@ -1,0 +1,8 @@
+{
+  "name": "frpc",
+  "version": "0.70.0",
+  "github_repo": "fatedier/frp",
+  "asset": { "arm64": "frp_{version}_darwin_arm64.tar.gz", "x86_64": "frp_{version}_darwin_amd64.tar.gz" },
+  "binaries": ["frpc"],
+  "main_binary": "frpc"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "mailpit",
+  "version": "1.30.4",
+  "github_repo": "axllent/mailpit",
+  "asset": { "arm64": "mailpit-darwin-arm64.tar.gz", "x86_64": "mailpit-darwin-amd64.tar.gz" },
+  "binaries": ["mailpit"],
+  "main_binary": "mailpit"
+}
