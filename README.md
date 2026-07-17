@@ -6,13 +6,23 @@ Burd needs standalone versions of databases, caches, and other services that don
 
 ## What's here
 
+Two pipelines, both publishing the same portable package layout (`bin/`, `lib/`, `etc/`, `manifest.json`) to per-service GitHub Releases with checksums.
+
 **Bottle-extracted services** — extracted from Homebrew bottles and relinked to `@executable_path` (Herd-style portability), so they carry their own dylibs and run standalone:
 
 `mariadb`, `mysql`, `postgresql`, `redis`, `valkey`, `memcached`, `beanstalkd`
 
 Each is defined by a `formulas/<name>.json` describing its binaries, dylib dependencies, and a functional test.
 
+**Mirrored services** — prebuilt, already-portable upstream binaries repackaged into the same layout:
+
+`frpc` (from `fatedier/frp`), `mailpit` (from `axllent/mailpit`)
+
+Each is defined by a `mirrors/<name>.json` naming the upstream repo, per-arch asset, and which binaries to keep.
+
 ## How it works
+
+Bottles (macOS runners, needs `brew`):
 
 ```
 brew fetch --bottle-tag   →  extract  →  relink to @executable_path
@@ -20,8 +30,17 @@ brew fetch --bottle-tag   →  extract  →  relink to @executable_path
   →  publish to a per-formula GitHub Release
 ```
 
-- `extract.sh` / `lib/*` — the extraction toolkit (runs on macOS, needs `brew`)
-- `.github/workflows/build-bottles.yml` — builds every formula for `arm64` + `x86_64` and publishes releases
+Mirrors (Linux runners — just repackaging):
+
+```
+download upstream release asset  →  extract wanted binaries
+  →  repackage to bin/  →  manifest + sha256  →  publish to a GitHub Release
+```
+
+- `extract.sh` / `lib/*` — bottle extraction toolkit (macOS + `brew`)
+- `mirror.sh` / `mirrors/*` — upstream repackaging
+- `.github/workflows/build-bottles.yml` — builds every formula for `arm64` + `x86_64`
+- `.github/workflows/build-mirrors.yml` — builds every mirror for `arm64` + `x86_64`
 
 ## Releases
 
