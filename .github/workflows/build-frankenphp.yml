@@ -63,6 +63,13 @@ jobs:
         with:
           go-version: "1.26"
 
+      # static-php-cli is a PHP tool: it needs a host PHP + composer to run.
+      - name: Set up host PHP + composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer
+
       - name: Install build dependencies
         run: |
           brew update
@@ -70,6 +77,10 @@ jobs:
 
       - name: Build FrankenPHP (${{ matrix.php }}, ${{ matrix.arch }})
         working-directory: frankenphp
+        # GITHUB_TOKEN authenticates static-php-cli's GitHub API source
+        # downloads — without it they hit the unauthenticated rate limit (403).
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./scripts/build-frankenphp.sh "${{ matrix.php }}" "${{ matrix.arch }}" darwin
 
       - name: Package + checksum
