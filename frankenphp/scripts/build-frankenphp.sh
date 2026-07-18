@@ -31,10 +31,15 @@ echo "Loading config: $CONFIG_FILE"
 source "$CONFIG_FILE"
 echo
 
-# Clone FrankenPHP if needed
+# Clone FrankenPHP at the pinned version (falls back to default branch if the
+# ref isn't a tag/branch, e.g. FRANKENPHP_VERSION=main).
 if [ ! -d "frankenphp" ]; then
-    echo "Cloning FrankenPHP..."
-    git clone --depth 1 https://github.com/dunglas/frankenphp.git
+    echo "Cloning FrankenPHP ${FRANKENPHP_VERSION}..."
+    if ! git clone --depth 1 --branch "${FRANKENPHP_VERSION}" \
+        https://github.com/dunglas/frankenphp.git 2>/dev/null; then
+        echo "Ref ${FRANKENPHP_VERSION} not found as tag/branch; cloning default branch"
+        git clone --depth 1 https://github.com/dunglas/frankenphp.git
+    fi
     echo
 fi
 
@@ -46,9 +51,14 @@ echo "This may take 40-60 minutes..."
 echo
 
 if [ "$OS" = "darwin" ]; then
-    # macOS build
+    # macOS build. FrankenPHP's build-static.sh names the macOS output
+    # "frankenphp-mac-<arch>" (not "-darwin-"), so match that.
     ./build-static.sh
-    BINARY_PATH="./dist/frankenphp-${OS}-${ARCH}"
+    BINARY_PATH="./dist/frankenphp-mac-${ARCH}"
+    if [ ! -f "$BINARY_PATH" ]; then
+        # Fall back to whatever single frankenphp-* the build produced.
+        BINARY_PATH="$(ls dist/frankenphp-*-${ARCH} 2>/dev/null | head -1)"
+    fi
 else
     # Linux build (Docker)
     echo "Using Docker for Linux build..."
