@@ -63,11 +63,12 @@ jobs:
         with:
           go-version: "1.26"
 
-      # static-php-cli is a PHP tool: it needs a host PHP + composer to run.
+      # static-php-cli / FrankenPHP's build tooling needs a host PHP + composer.
+      # Use 8.4 — its composer.lock isn't satisfiable on older host PHP.
       - name: Set up host PHP + composer
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.3"
+          php-version: "8.4"
           tools: composer
 
       - name: Install build dependencies
