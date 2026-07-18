@@ -1,0 +1,103 @@
+name: Build FrankenPHP
+
+# Builds custom static FrankenPHP binaries with the full extension set Burd
+# needs (redis, mongodb, imagick, memcached, intl, …) that the official builds
+# omit. Each build is a self-contained static binary published to a per-PHP-line
+# GitHub Release with a checksum.
+#
+# These builds take ~45-60 min each, so this does NOT run on push — trigger it
+# manually or let the monthly schedule refresh them.
+
+on:
+  workflow_dispatch:
+    inputs:
+      php:
+        description: "PHP line to build ('all', or 8.3 / 8.4 / 8.5)"
+        type: string
+        default: "all"
+      arch:
+        description: "Architecture ('both', arm64, x86_64)"
+        type: string
+        default: "both"
+  schedule:
+    # Monthly: pick up new FrankenPHP / PHP patch releases.
+    - cron: "0 4 1 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      combos: ${{ steps.gen.outputs.combos }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: gen
+        env:
+          PHP_IN: ${{ inputs.php || 'all' }}
+          ARCH_IN: ${{ inputs.arch || 'both' }}
+        run: |
+          phps='["8.3","8.4","8.5"]'
+          [ "$PHP_IN" != "all" ] && [ -n "$PHP_IN" ] && phps="[\"$PHP_IN\"]"
+          arches='[{"arch":"arm64","runner":"macos-14"},{"arch":"x86_64","runner":"macos-15-intel"}]'
+          [ "$ARCH_IN" = "arm64" ] && arches='[{"arch":"arm64","runner":"macos-14"}]'
+          [ "$ARCH_IN" = "x86_64" ] && arches='[{"arch":"x86_64","runner":"macos-15-intel"}]'
+          combos=$(jq -cn --argjson p "$phps" --argjson a "$arches" \
+            '[$p[] as $php | $a[] | {php:$php, arch:.arch, runner:.runner}]')
+          echo "combos=$combos" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.matrix.outputs.combos) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Install build dependencies
+        run: |
+          brew update
+          brew install pkg-config autoconf automake libtool bison re2c
+
+      - name: Build FrankenPHP (${{ matrix.php }}, ${{ matrix.arch }})
+        working-directory: frankenphp
+        run: ./scripts/build-frankenphp.sh "${{ matrix.php }}" "${{ matrix.arch }}" darwin
+
+      - name: Package + checksum
+        id: pkg
+        working-directory: frankenphp
+        run: |
+          set -euo pipefail
+          bin="php-web-${{ matrix.php }}-darwin-${{ matrix.arch }}"
+          asset="frankenphp-${{ matrix.php }}-${{ matrix.arch }}"
+          cp "$bin" "$asset"
+          shasum -a 256 "$asset" | cut -d' ' -f1 > "$asset.sha256"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "tag=frankenphp-${{ matrix.php }}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: frankenphp
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.pkg.outputs.tag }}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "FrankenPHP (PHP ${{ matrix.php }})" \
+              --notes "Custom static FrankenPHP for PHP ${{ matrix.php }} with Burd's full extension set (redis, mongodb, imagick, memcached, intl, and more)." \
+              || true
+          fi
+          gh release upload "$TAG" \
+            "${{ steps.pkg.outputs.asset }}" \
+            "${{ steps.pkg.outputs.asset }}.sha256" \
+            --clobber

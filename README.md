@@ -20,6 +20,10 @@ Each is defined by a `formulas/<name>.json` describing its binaries, dylib depen
 
 Each is defined by a `mirrors/<name>.json` naming the upstream repo, per-arch asset, and which binaries to keep.
 
+**Custom FrankenPHP** — self-contained static PHP application-server binaries built with the full extension set Burd needs (`redis`, `mongodb`, `imagick`, `memcached`, `intl`, and many more) that the official FrankenPHP builds omit. Built for PHP **8.3, 8.4, and 8.5**.
+
+Each PHP line's extension list lives in `frankenphp/configs/build-<php>.env`.
+
 ## How it works
 
 Bottles (macOS runners, needs `brew`):
@@ -37,10 +41,19 @@ download upstream release asset  →  extract wanted binaries
   →  repackage to bin/  →  manifest + sha256  →  publish to a GitHub Release
 ```
 
+FrankenPHP (macOS runners, static build — ~45-60 min each):
+
+```
+clone dunglas/frankenphp  →  build-static.sh with the extension set
+  →  test (version + php-cli -m)  →  publish binary + sha256 to a release
+```
+
 - `extract.sh` / `lib/*` — bottle extraction toolkit (macOS + `brew`)
 - `mirror.sh` / `mirrors/*` — upstream repackaging
+- `frankenphp/` — FrankenPHP build configs + scripts
 - `.github/workflows/build-bottles.yml` — builds every formula for `arm64` + `x86_64`
 - `.github/workflows/build-mirrors.yml` — builds every mirror for `arm64` + `x86_64`
+- `.github/workflows/build-frankenphp.yml` — builds each PHP line for `arm64` + `x86_64` (manual / monthly, not on push)
 
 ## Releases
 
