@@ -90,10 +90,25 @@ jobs:
         run: |
           set -euo pipefail
           bin="php-web-${{ matrix.php }}-darwin-${{ matrix.arch }}"
-          asset="frankenphp-${{ matrix.php }}-${{ matrix.arch }}"
+
+          # Extract the FrankenPHP version from the binary and combine it with
+          # the PHP line, so the published version reads e.g. "8.4-1.12.4"
+          # instead of just the FrankenPHP "1.12.4" — the PHP line is what users
+          # care about when picking a version.
+          fp_ver="$(./"$bin" version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | tr -d v)"
+          if [ -z "$fp_ver" ]; then
+            echo "Could not determine FrankenPHP version from binary" >&2
+            exit 1
+          fi
+          combined="${{ matrix.php }}-${fp_ver}"
+
+          asset="frankenphp-${combined}-${{ matrix.arch }}"
           cp "$bin" "$asset"
           shasum -a 256 "$asset" | cut -d' ' -f1 > "$asset.sha256"
           echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "combined=$combined" >> "$GITHUB_OUTPUT"
+          # One release per PHP line; the combined version lives in the asset
+          # name and in services.json's version field.
           echo "tag=frankenphp-${{ matrix.php }}" >> "$GITHUB_OUTPUT"
 
       - name: Publish to release
@@ -106,7 +121,7 @@ jobs:
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" \
               --title "FrankenPHP (PHP ${{ matrix.php }})" \
-              --notes "Custom static FrankenPHP for PHP ${{ matrix.php }} with Burd's full extension set (redis, mongodb, imagick, memcached, intl, and more)." \
+              --notes "Custom static FrankenPHP for PHP ${{ matrix.php }} with Burd's full extension set (redis, mongodb, imagick, memcached, intl, and more). Versions are published as <php>-<frankenphp>, e.g. ${{ steps.pkg.outputs.combined }}." \
               || true
           fi
           gh release upload "$TAG" \
