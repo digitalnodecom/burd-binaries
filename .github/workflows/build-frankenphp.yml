@@ -89,12 +89,18 @@ jobs:
       - name: Dump build log on failure
         if: failure()
         run: |
-          log="frankenphp/frankenphp/dist/static-php-cli/log/spc.output.log"
-          if [ -f "$log" ]; then
-            echo "===== static-php-cli output log (tail) ====="
-            tail -120 "$log"
-          else
-            echo "No SPC log at $log"
+          base="frankenphp/frankenphp/dist/static-php-cli/log"
+          # spc.shell.log holds the raw compiler/make output — grep it for the
+          # actual "error:" lines that identify the offending extension.
+          if [ -f "$base/spc.shell.log" ]; then
+            echo "===== compiler errors (spc.shell.log) ====="
+            grep -iE "error:|Error [0-9]|undefined|no member|has no member|conflicting|incompatible|In file included" "$base/spc.shell.log" | tail -60 || true
+            echo "===== spc.shell.log tail ====="
+            tail -80 "$base/spc.shell.log"
+          fi
+          if [ -f "$base/spc.output.log" ]; then
+            echo "===== spc.output.log tail ====="
+            tail -40 "$base/spc.output.log"
           fi
 
       - name: Package + checksum
