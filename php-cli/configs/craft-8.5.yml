@@ -84,7 +84,6 @@ extensions:
   - protobuf
 
   # Memory/Cache
-  - memcache
   - memcached
 
   # System/IPC
