@@ -109,38 +109,6 @@ extensions:
   - xlswriter
   - yaml
 
-libs:
-  - libmongoc
-  - libffi
-  - libcurl
-  - libssl
-  - libpng
-  - libjpeg
-  - libwebp
-  - imagemagick
-  - libxml2
-  - libxslt
-  - icu
-  - libzip
-  - libbz2
-  - libsodium
-  - libbrotli
-  - liblz4
-  - liblzma
-  - libzstd
-  - libssh2
-  - openldap
-  - librabbitmq
-  - libtidy
-  - protobuf
-  - readline
-  - gettext
-  - libmemcached
-  - libxlsxwriter
-  - libyaml
-
-
-# Build options (map form, current static-php-cli schema)
 build-options:
   no-strip: false
 
