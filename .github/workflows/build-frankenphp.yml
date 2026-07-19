@@ -84,6 +84,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./scripts/build-frankenphp.sh "${{ matrix.php }}" "${{ matrix.arch }}" darwin
 
+      # On a compile failure, surface static-php-cli's detailed log so the
+      # offending extension/error is visible without a --debug rebuild.
+      - name: Dump build log on failure
+        if: failure()
+        run: |
+          log="frankenphp/frankenphp/dist/static-php-cli/log/spc.output.log"
+          if [ -f "$log" ]; then
+            echo "===== static-php-cli output log (tail) ====="
+            tail -120 "$log"
+          else
+            echo "No SPC log at $log"
+          fi
+
       - name: Package + checksum
         id: pkg
         working-directory: frankenphp
@@ -107,9 +120,10 @@ jobs:
           shasum -a 256 "$asset" | cut -d' ' -f1 > "$asset.sha256"
           echo "asset=$asset" >> "$GITHUB_OUTPUT"
           echo "combined=$combined" >> "$GITHUB_OUTPUT"
-          # One release per PHP line; the combined version lives in the asset
-          # name and in services.json's version field.
-          echo "tag=frankenphp-${{ matrix.php }}" >> "$GITHUB_OUTPUT"
+          # Tag per combined version so the release name matches the version
+          # string, giving services.json a clean {version} URL substitution:
+          #   .../releases/download/frankenphp-<version>/frankenphp-<version>-<arch>
+          echo "tag=frankenphp-${combined}" >> "$GITHUB_OUTPUT"
 
       - name: Publish to release
         env:
