@@ -1,0 +1,167 @@
+# static-php-cli configuration for PHP 8.3 CLI builds
+# Includes IMAP extension (removed in PHP 8.4+)
+
+php-version: "8.3"
+
+sapi:
+  - cli
+
+extensions:
+  # Special requirements
+  - mongodb
+  - ffi
+  - spx
+  - imap
+
+  # Database
+  - pdo
+  - pdo_mysql
+  - pdo_pgsql
+  - pdo_sqlite
+  - pdo_sqlsrv
+  - mysqli
+  - mysqlnd
+  - pgsql
+  - sqlite3
+  - redis
+
+  # Core functionality
+  - curl
+  - openssl
+  - mbstring
+  - mbregex
+  - zip
+  - zlib
+  - bz2
+  - sodium
+
+  # Image processing
+  - gd
+  - imagick
+  - exif
+
+  # XML/Data processing
+  - xml
+  - dom
+  - simplexml
+  - xmlreader
+  - xmlwriter
+  - soap
+  - xsl
+
+  # Internationalization
+  - intl
+
+  # Math
+  - bcmath
+  - gmp
+
+  # Caching
+  - apcu
+  - opcache
+
+  # System
+  - pcntl
+  - posix
+  - sockets
+
+  # Utilities
+  - fileinfo
+  - filter
+  - tokenizer
+  - calendar
+  - ctype
+  - iconv
+  - session
+  - phar
+
+  # Compression/Encoding
+  - brotli
+  - lz4
+  - xz
+  - zstd
+
+  # Data Serialization
+  - igbinary
+  - protobuf
+
+  # Memory/Cache
+  - memcache
+  - memcached
+
+  # System/IPC
+  - shmop
+  - sysvmsg
+  - sysvsem
+  - sysvshm
+  # Note: parallel requires ZTS (FrankenPHP only)
+
+  # Network/Remote
+  - amqp
+  - ssh2
+
+  # System Utilities
+  - ast
+  - dba
+  - ftp
+  - gettext
+  - ldap
+  - readline
+  - tidy
+  - xlswriter
+  - yaml
+
+libs:
+  - libmongoc
+  - libffi
+  - libcurl
+  - libssl
+  - libpng
+  - libjpeg
+  - libwebp
+  - imagemagick
+  - libxml2
+  - libxslt
+  - icu
+  - libzip
+  - libbz2
+  - libsodium
+  - libc-client
+  - libbrotli
+  - liblz4
+  - liblzma
+  - libzstd
+  - libssh2
+  - openldap
+  - librabbitmq
+  - libtidy
+  - protobuf
+  - readline
+  - gettext
+  - libmemcached
+  - libxlsxwriter
+  - libyaml
+
+build-options:
+  - --with-openssl
+  - --with-curl
+  - --enable-gd
+  - --with-jpeg
+  - --with-webp
+  - --enable-intl
+  - --enable-opcache
+  - --enable-pcntl
+  - --enable-sockets
+  - --enable-bcmath
+  - --with-gmp
+  - --with-sodium
+  - --enable-ffi
+  - --with-imap
+  - --with-imap-ssl
+  - --enable-brotli
+  - --enable-zstd
+  - --with-readline
+  - --with-yaml
+
+optimize: true
+strip: true

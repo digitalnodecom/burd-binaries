@@ -1,0 +1,120 @@
+name: Build PHP CLI
+
+# Builds standalone static PHP CLI binaries with Burd's full extension set
+# (redis, mongodb, imagick, ffi, intl, xlswriter, ...) — the CLI counterpart to
+# the FrankenPHP builds. These are the `php` binaries the version manager links
+# for command-line use. ~20-30 min each; manual / monthly, not on push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      php:
+        description: "PHP line to build ('all', or 8.3 / 8.4 / 8.5)"
+        type: string
+        default: "all"
+      arch:
+        description: "Architecture ('both', arm64, x86_64)"
+        type: string
+        default: "both"
+  schedule:
+    - cron: "0 5 1 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      combos: ${{ steps.gen.outputs.combos }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: gen
+        env:
+          PHP_IN: ${{ inputs.php || 'all' }}
+          ARCH_IN: ${{ inputs.arch || 'both' }}
+        run: |
+          phps='["8.3","8.4","8.5"]'
+          [ "$PHP_IN" != "all" ] && [ -n "$PHP_IN" ] && phps="[\"$PHP_IN\"]"
+          arches='[{"arch":"arm64","runner":"macos-14"},{"arch":"x86_64","runner":"macos-15-intel"}]'
+          [ "$ARCH_IN" = "arm64" ] && arches='[{"arch":"arm64","runner":"macos-14"}]'
+          [ "$ARCH_IN" = "x86_64" ] && arches='[{"arch":"x86_64","runner":"macos-15-intel"}]'
+          combos=$(jq -cn --argjson p "$phps" --argjson a "$arches" \
+            '[$p[] as $php | $a[] | {php:$php, arch:.arch, runner:.runner}]')
+          echo "combos=$combos" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.matrix.outputs.combos) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up host PHP + composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer
+
+      - name: Install build dependencies
+        run: |
+          brew update
+          brew install pkg-config autoconf automake libtool bison re2c
+
+      - name: Build PHP CLI (${{ matrix.php }}, ${{ matrix.arch }})
+        working-directory: php-cli
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/build-cli.sh "${{ matrix.php }}" "${{ matrix.arch }}" darwin
+
+      - name: Dump build log on failure
+        if: failure()
+        run: |
+          log="php-cli/static-php-cli/log/spc.output.log"
+          if [ -f "$log" ]; then
+            echo "===== static-php-cli output log (tail) ====="
+            tail -120 "$log"
+          else
+            echo "No SPC log at $log"
+          fi
+
+      - name: Package + checksum
+        id: pkg
+        working-directory: php-cli
+        run: |
+          set -euo pipefail
+          bin="php-cli-${{ matrix.php }}-darwin-${{ matrix.arch }}"
+          # Full PHP version (e.g. 8.4.23) so the published version is precise.
+          full="$(./"$bin" -r 'echo PHP_VERSION;' 2>/dev/null)"
+          if [ -z "$full" ]; then
+            echo "Could not determine PHP version from binary" >&2
+            exit 1
+          fi
+          asset="php-cli-${full}-${{ matrix.arch }}"
+          cp "$bin" "$asset"
+          shasum -a 256 "$asset" | cut -d' ' -f1 > "$asset.sha256"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "full=$full" >> "$GITHUB_OUTPUT"
+          echo "tag=php-cli-${full}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: php-cli
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.pkg.outputs.tag }}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "PHP CLI ${{ steps.pkg.outputs.full }}" \
+              --notes "Standalone static PHP ${{ steps.pkg.outputs.full }} CLI with Burd's full extension set (redis, mongodb, imagick, ffi, intl, xlswriter, and more)." \
+              || true
+          fi
+          gh release upload "$TAG" \
+            "${{ steps.pkg.outputs.asset }}" \
+            "${{ steps.pkg.outputs.asset }}.sha256" \
+            --clobber
