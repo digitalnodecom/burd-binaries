@@ -81,7 +81,6 @@ extensions:
 
   # Data Serialization
   - igbinary
-  - protobuf
 
   # Memory/Cache
   - memcached
