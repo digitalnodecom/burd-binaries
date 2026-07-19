@@ -3,8 +3,14 @@
   "homebrew_formula": "postgresql@17",
   "description": "Object-relational database system",
   "homepage": "https://www.postgresql.org/",
-  "architectures": ["arm64", "x86_64"],
-  "macos_versions": ["sonoma", "sequoia"],
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "macos_versions": [
+    "sonoma",
+    "sequoia"
+  ],
   "binaries": [
     "postgres",
     "psql",
@@ -27,7 +33,10 @@
   "dependencies": [
     {
       "formula": "openssl@3",
-      "libs": ["libssl.3.dylib", "libcrypto.3.dylib"]
+      "libs": [
+        "libssl.3.dylib",
+        "libcrypto.3.dylib"
+      ]
     },
     {
       "formula": "icu4c@78",
@@ -35,11 +44,19 @@
     },
     {
       "formula": "lz4",
-      "libs": ["liblz4.1.10.0.dylib", "liblz4.dylib", "liblz4.1.dylib"]
+      "libs": [
+        "liblz4.1.10.0.dylib",
+        "liblz4.dylib",
+        "liblz4.1.dylib"
+      ]
     },
     {
       "formula": "zstd",
-      "libs": ["libzstd.1.5.7.dylib", "libzstd.1.dylib", "libzstd.dylib"]
+      "libs": [
+        "libzstd.1.5.7.dylib",
+        "libzstd.1.dylib",
+        "libzstd.dylib"
+      ]
     },
     {
       "formula": "krb5",
@@ -58,5 +75,9 @@
     "{main_binary} --version"
   ],
   "default_port": 5432,
-  "notes": "PostgreSQL requires initialization with initdb before first use."
+  "notes": "PostgreSQL requires initialization with initdb before first use.",
+  "companion_extensions": [
+    "pgvector",
+    "pg_partman"
+  ]
 }

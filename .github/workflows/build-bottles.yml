@@ -61,6 +61,13 @@ jobs:
       - name: Extract bottle
         run: ./extract.sh "${{ matrix.formula }}" latest "${{ matrix.arch }}"
 
+      # Merge companion extensions (e.g. pgvector, pg_partman for postgres) into
+      # the package if the formula declares any. No-op otherwise.
+      - name: Merge companion extensions
+        run: |
+          out=$(ls -d output/${{ matrix.formula }}/*-${{ matrix.arch }} | head -1)
+          ./merge-companions.sh "${{ matrix.formula }}" "${{ matrix.arch }}" "$out"
+
       - name: Package + checksum
         id: pkg
         run: |
