@@ -113,8 +113,6 @@ extensions:
 
 build-options:
   no-strip: false
-  with-hardcoded-ini:
-    - "burd.build=DigitalNode-Burd"
 
 craft-options:
   doctor: true
