@@ -142,26 +142,12 @@ libs:
   - libxlsxwriter
   - libyaml
 
-build-options:
-  - --with-openssl
-  - --with-curl
-  - --enable-gd
-  - --with-jpeg
-  - --with-webp
-  - --enable-intl
-  - --enable-opcache
-  - --enable-pcntl
-  - --enable-sockets
-  - --enable-bcmath
-  - --with-gmp
-  - --with-sodium
-  - --enable-ffi
-  - --with-imap
-  - --with-imap-ssl
-  - --enable-brotli
-  - --enable-zstd
-  - --with-readline
-  - --with-yaml
 
-optimize: true
-strip: true
+# Build options (map form, current static-php-cli schema)
+build-options:
+  no-strip: false
+
+craft-options:
+  doctor: true
+  download: true
+  build: true
